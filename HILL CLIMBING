@@ -1,0 +1,118 @@
+import random
+
+def create_board(state, n):
+    """Generates a text-based grid visual representation of the board."""
+    board_lines = []
+    for r in range(n):
+        row_str = ""
+        for c in range(n):
+            if state[c] == r:
+                row_str += " Q "
+            else:
+                row_str += " . "
+        board_lines.append(row_str)
+    return "\n".join(board_lines)
+
+def count_conflicts(state, n):
+    """Calculates the number of attacking pairs of queens (sharing row or diagonal)."""
+    conflicts = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            # Check if they are in the same row
+            if state[i] == state[j]:
+                conflicts += 1
+            # Check if they are on the same diagonal
+            elif abs(state[i] - state[j]) == abs(i - j):
+                conflicts += 1
+    return conflicts
+
+def get_best_neighbor(state, n):
+    """Generates all neighbors by moving one queen in its column and finds the best choice."""
+    current_conflicts = count_conflicts(state, n)
+    best_state = list(state)
+    best_conflicts = current_conflicts
+    
+    # Iterate through each column
+    for col in range(n):
+        original_row = state[col]
+        # Try moving the queen to every other row in this column
+        for row in range(n):
+            if row == original_row:
+                continue
+            
+            # Create a neighbor state
+            neighbor = list(state)
+            neighbor[col] = row
+            neighbor_conflicts = count_conflicts(neighbor, n)
+            
+            # If this neighbor is strictly better, keep track of it
+            if neighbor_conflicts < best_conflicts:
+                best_conflicts = neighbor_conflicts
+                best_state = neighbor
+                
+    return best_state, best_conflicts
+
+def solve_n_queens(n):
+    """Main function executing the hill climbing flow with random restarts."""
+    # Step 1 & 2: Validate Input
+    if n < 1:
+        print("Display invalid input")
+        return
+
+    # Step 3: Initialize State (Random arrangement: one queen per column)
+    # The state list stores the row index for the queen in each column index.
+    current_state = [random.randint(0, n - 1) for _ in range(n)]
+    
+    print("Initial Board:")
+    print(create_board(current_state, n))
+    print(f"\nNumber of attacking pairs: {count_conflicts(current_state, n)}\n")
+    print("Applying Hill Climbing...\n")
+    
+    while True:
+        current_conflicts = count_conflicts(current_state, n)
+        
+        # Step 5: Check Goal
+        if current_conflicts == 0:
+            print("Solution Found!\n")
+            print("Final Board:")
+            print(create_board(current_state, n))
+            print(f"\nNumber of attacking pairs: {current_conflicts}")
+            return
+        
+        # Step 6 & 7: Generate and evaluate neighbors
+        next_state, next_conflicts = get_best_neighbor(current_state, n)
+        
+        # Step 8: Handle local minimum / shoulder (No better neighbor available)
+        if next_conflicts >= current_conflicts:
+            # Restart with a new random arrangement
+            current_state = [random.randint(0, n - 1) for _ in range(n)]
+        else:
+            # Move to the better neighbor
+            current_state = next_state
+
+# --- Run the Algorithm ---
+# Set the number of queens (N)
+N = 4
+solve_n_queens(N)
+
+
+OUTPUT:
+Initial Board:
+ Q  Q  .  . 
+ .  .  .  Q 
+ .  .  Q  . 
+ .  .  .  . 
+
+Number of attacking pairs: 3
+
+Applying Hill Climbing...
+
+Solution Found!
+
+Final Board:
+ .  .  Q  . 
+ Q  .  .  . 
+ .  .  .  Q 
+ .  Q  .  . 
+
+Number of attacking pairs: 0
